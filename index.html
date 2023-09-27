@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt OCR Scanner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        label {
+            background-color: #007BFF;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        label:hover {
+            background-color: #0056b3;
+        }
+
+        #preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 20px 0;
+        }
+
+        #scanButton {
+            background-color: #007BFF;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-weight: bold;
+        }
+
+        #scanButton:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #scanButton:hover {
+            background-color: #0056b3;
+        }
+
+        #saveButton {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-weight: bold;
+        }
+
+        #saveButton:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #saveButton:hover {
+            background-color: #1e7e34;
+        }
+
+        #goToSavePageButton {
+            background-color: #007BFF;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        #goToSavePageButton:hover {
+            background-color: #0056b3;
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+
+        strong {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Receipt OCR Scanner</h1>
+    
+    <!-- Input for selecting a receipt image -->
+    <label for="fileInput">Choose a Receipt Image</label>
+    <input type="file" accept="image/*" id="fileInput">
+    
+    <!-- Display the selected image -->
+    <img id="preview" src="" alt="Scanned Receipt">
+    
+    <!-- Button to extract text from the scanned receipt -->
+    <button id="scanButton" disabled>Scan Receipt</button>
+
+    <!-- Button to save data -->
+    <button id="saveButton" disabled>Save Data</button>
+    
+    <!-- Display the extracted text -->
+    <div id="result"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2"></script>
+    <script>
+        // Function to handle file input change
+        function handleFileInputChange() {
+            const fileInput = document.getElementById("fileInput");
+            const preview = document.getElementById("preview");
+            const scanButton = document.getElementById("scanButton");
+            const saveButton = document.getElementById("saveButton");
+            const goToSavePageButton = document.getElementById("goToSavePageButton");
+
+            // Check if a file is selected
+            if (fileInput.files.length > 0) {
+                const selectedFile = fileInput.files[0];
+
+                // Display the selected image
+                preview.src = URL.createObjectURL(selectedFile);
+
+                // Enable the scan button
+                scanButton.disabled = false;
+                saveButton.disabled = false;
+                goToSavePageButton.disabled = false; // Enable the Go to Save Page button
+            }
+        }
+
+        // Function to perform OCR on the selected image
+        async function scanReceipt() {
+            const preview = document.getElementById("preview");
+            const resultDiv = document.getElementById("result");
+
+            // Perform OCR using Tesseract.js
+            const { data: { text } } = await Tesseract.recognize(
+                preview.src,
+                'por', // Language code for Portuguese
+                { logger: (info) => console.log(info) }
+            );
+
+            // Define keywords for each category
+            const keywords = {
+                "name": ["nome"],
+                "address": ["endereço", "morada", "rua"],
+                "value": ["valor", "total", "montante", "R$"]
+            };
+
+            // Split the text into lines
+            const lines = text.split('\n');
+
+            // Display the extracted text based on categories
+            resultDiv.innerHTML = ""; // Clear previous results
+
+            lines.forEach((line) => {
+                // Check if the line matches any category keywords
+                for (const [category, categoryKeywords] of Object.entries(keywords)) {
+                    if (categoryKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
+                        resultDiv.innerHTML += `<strong>${category}:</strong> ${line}<br>`;
+                        break; // Stop searching for other categories
+                    }
+                }
+            });
+        }
+
+        // Function to save data and redirect to save_page.html
+        function saveDataAndRedirect() {
+            // Get the extracted text
+            const resultDiv = document.getElementById("result");
+            const extractedText = resultDiv.innerText;
+
+            // Get existing saved data from local storage
+            const savedData = localStorage.getItem("savedData") || "[]";
+
+            // Parse existing data or create an empty array
+            const data = JSON.parse(savedData);
+
+            // Add the new extracted text to the data array
+            data.push(extractedText);
+
+            // Save the updated data to local storage
+            localStorage.setItem("savedData", JSON.stringify(data));
+
+            // Redirect to the save_page.html
+            window.location.href = "save_page.html";
+        }
+
+        // Add event listeners
+        const fileInput = document.getElementById("fileInput");
+        const scanButton = document.getElementById("scanButton");
+        const saveButton = document.getElementById("saveButton");
+        const goToSavePageButton = document.getElementById("goToSavePageButton");
+
+        fileInput.addEventListener("change", handleFileInputChange);
+        scanButton.addEventListener("click", scanReceipt);
+        saveButton.addEventListener("click", saveDataAndRedirect);
+    </script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 80%;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007BFF;
+            color: #fff;
+        }
+
+        .deleteButton {
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .deleteButton:hover {
+            background-color: #c82333;
+        }
+
+        #goToIndexButton {
+            background-color: #007BFF;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #goToIndexButton:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Saved Data</h1>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="dataList"></tbody>
+    </table>
+    
+    <button id="goToIndexButton">Back to Index</button>
+    
+    <script>
+        // Function to load and display saved data
+        function loadSavedData() {
+            const dataList = document.getElementById("dataList");
+
+            // Get saved data from local storage
+            const savedData = localStorage.getItem("savedData");
+
+            if (savedData) {
+                const data = JSON.parse(savedData);
+
+                // Display saved data in the table
+                data.forEach((item, index) => {
+                    const tableRow = document.createElement("tr");
+                    tableRow.innerHTML = `
+                        <td>${item}</td>
+                        <td><button class="deleteButton" onclick="deleteData(${index})">Delete</button></td>
+                    `;
+                    dataList.appendChild(tableRow);
+                });
+            }
+        }
+
+        // Function to delete saved data by index
+        function deleteData(index) {
+            // Get saved data from local storage
+            const savedData = localStorage.getItem("savedData");
+
+            if (savedData) {
+                const data = JSON.parse(savedData);
+
+                // Remove the item at the specified index
+                data.splice(index, 1);
+
+                // Save the updated data back to local storage
+                localStorage.setItem("savedData", JSON.stringify(data));
+
+                // Refresh the page to reflect the changes
+                location.reload();
+            }
+        }
+
+        // Function to go back to index.html
+        document.getElementById("goToIndexButton").addEventListener("click", function () {
+            window.location.href = "index.html";
+        });
+
+        // Load and display saved data when the page loads
+        window.onload = loadSavedData;
+    </script>
+</body>
+</html>
